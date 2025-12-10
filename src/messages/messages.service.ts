@@ -1,22 +1,44 @@
 import { Injectable } from '@nestjs/common';
-import { Readable } from 'node:stream';
+import { Readable, PassThrough } from 'node:stream';
+import { GoogleGenAI } from '@google/genai';
+import { ConfigService } from '@nestjs/config';
+
 
 @Injectable()
 export class MessagesService {
-  async generateStream(content: string): Promise<Readable> {
-    const words = content.split(' ');
-    let index = 0;
+  private genAI: GoogleGenAI;
 
-    return new Readable({
-      async read() {
-        if (index >= words.length) {
-          this.push(null);
-          return;
+  constructor(private configService: ConfigService) {
+    const googleGeminiApiKey = this.configService.get<string>('GEMINI_API_KEY');
+    this.genAI = new GoogleGenAI({
+      apiKey: googleGeminiApiKey || ''
+    });
+  }
+
+  async generateStream(content: string): Promise<Readable> {
+    const result = await this.genAI.models.generateContentStream({
+      contents: content,
+      model: 'gemini-2.0-flash'
+    });
+
+    const stream = new PassThrough({
+      highWaterMark: 1024
+    });
+
+    (async () => {
+      try {
+        for await (const chunk of result) {
+          stream.write(chunk.text);
         }
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        this.push(words[index] + ' ');
-        index++;
+        console.log(`Stream complete.`);
+        stream.end();
+      } catch (error) {
+        console.error('Stream error:', error);
+        stream.destroy(error);
       }
-    })
+    })();
+
+    console.log('Returning stream...');
+    return stream;
   }
 }

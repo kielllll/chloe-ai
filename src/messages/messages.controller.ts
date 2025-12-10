@@ -9,11 +9,21 @@ export class MessagesController {
 
   @Post()
   async create(@Body() body: CreateMessageDto, @Res() res: Response) {
-    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Transfer-Encoding', 'chunked');
     res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('X-Accel-Buffering', 'no');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
 
     const stream = await this.messagesService.generateStream(body.content);
+
     stream.pipe(res);
+
+    stream.on('error', (error) => {
+      console.error('Stream error:', error);
+      if (!res.headersSent) {
+        res.status(500).end();
+      }
+    });
   }
 }
