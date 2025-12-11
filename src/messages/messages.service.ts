@@ -35,8 +35,6 @@ export class MessagesService {
         // For now, we proceed without context but we might want to inform the user.
     }
 
-    console.log('MATCHES: ', contextString)
-
     // 2. Construct Prompt
     const strictSystemPrompt = `
 You are an intelligent knowledge assistant specializing in self-help literature. 
