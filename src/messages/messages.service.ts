@@ -18,7 +18,7 @@ export class MessagesService {
   async generateStream(content: string): Promise<Readable> {
     const result = await this.genAI.models.generateContentStream({
       contents: content,
-      model: 'gemini-2.0-flash'
+      model: 'gemini-2.5-flash-lite-preview-09-2025'
     });
 
     const stream = new PassThrough({
