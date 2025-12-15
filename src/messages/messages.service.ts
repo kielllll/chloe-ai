@@ -37,18 +37,23 @@ export class MessagesService {
 
     // 2. Construct Prompt
     const strictSystemPrompt = `
-You are an intelligent knowledge assistant specializing in self-help literature. 
-Your task is to answer the user's question using ONLY the provided context snippets below.
-Guidelines:
-1. **Strict Grounding**: Do not use outside knowledge. If the answer cannot be found in the Context, respectfully state that you do not have enough information found in the available books.
-2. **Citations**: Always explicitly cite the book title and page number when available in the context.
-3. **Synthesis**: Combine information from multiple chunks if they are relevant.
-4. **Tone**: Polite, professional, and encouraging.
-Context:
-"${contextString}"
-Question:
-"${content}"
-Answer:
+You are a helpful assistant specialized in self-help books.
+
+Based on the book excerpts below, respond to the user's question appropriately:
+- If they ask for a summary or overview, provide a comprehensive summary
+- If they ask a specific question, answer it directly
+- Always mention which book(s) the information comes from
+- Extract and mention the author's name if it appears in the excerpts
+- Use ONLY the information provided in the excerpts
+
+IMPORTANT: If the excerpts don't contain enough information to answer the question, politely respond: "I don't have enough information about that in my current book collection. Could you ask about something else?"
+
+Book Excerpts:
+${contextString}
+
+User Question: ${content}
+
+Provide a clear, helpful response.
 `
 
     const result = await this.genAI.models.generateContentStream({
