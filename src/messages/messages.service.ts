@@ -4,35 +4,35 @@ import { GoogleGenAI } from '@google/genai';
 import { ConfigService } from '@nestjs/config';
 import { PineconeService } from './pinecone.service';
 
-
 @Injectable()
 export class MessagesService {
   private genAI: GoogleGenAI;
 
   constructor(
     private configService: ConfigService,
-    private pineconeService: PineconeService
+    private pineconeService: PineconeService,
   ) {
     const googleGeminiApiKey = this.configService.get<string>('GEMINI_API_KEY');
     this.genAI = new GoogleGenAI({
-      apiKey: googleGeminiApiKey || ''
+      apiKey: googleGeminiApiKey || '',
     });
   }
 
   async generateStream(content: string): Promise<Readable> {
     // 1. Query Pinecone for context
-    let contextString = "";
+    let contextString = '';
     try {
-        const matches = await this.pineconeService.queryDatabase(content);
-        if (matches && matches.matches && matches.matches.length > 0) {
-            contextString = matches.matches // TODO: consider filtering for accurate relevance
-                .map(m => JSON.stringify(m.metadata))
-                .join("\n\n");
-        }
+      const matches = await this.pineconeService.queryDatabase(content);
+      if (matches && matches.matches && matches.matches.length > 0) {
+        contextString = matches.matches
+          .filter((m) => m?.score && m.score > 0.7)
+          .map((m) => JSON.stringify(m.metadata))
+          .join('\n\n');
+      }
     } catch (error) {
-        console.error("Failed to retrieve context from Pinecone:", error);
-        // Fallback: Proceed without context or handle gracefully?
-        // For now, we proceed without context but we might want to inform the user.
+      console.error('Failed to retrieve context from Pinecone:', error);
+      // Fallback: Proceed without context or handle gracefully?
+      // For now, we proceed without context but we might want to inform the user.
     }
 
     // 2. Construct Prompt
@@ -46,23 +46,23 @@ Based on the book excerpts below, respond to the user's question appropriately:
 - Extract and mention the author's name if it appears in the excerpts
 - Use ONLY the information provided in the excerpts
 
-IMPORTANT: If the excerpts don't contain enough information to answer the question, politely respond: "I don't have enough information about that in my current book collection. Could you ask about something else?"
-
 Book Excerpts:
 ${contextString}
 
 User Question: ${content}
 
+IMPORTANT: If the Book Excerpts section don't contain enough information to answer the question or basically empty, politely respond: "I don't have enough information about that in my current book collection. Could you ask about something else?"
+
 Provide a clear, helpful response.
-`
+`;
 
     const result = await this.genAI.models.generateContentStream({
       contents: strictSystemPrompt,
-      model: 'gemini-2.5-flash-lite-preview-09-2025'
+      model: 'gemini-2.5-flash-lite-preview-09-2025',
     });
 
     const stream = new PassThrough({
-      highWaterMark: 1024
+      highWaterMark: 1024,
     });
 
     (async () => {
