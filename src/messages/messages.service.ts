@@ -25,9 +25,9 @@ export class MessagesService {
       const matches = await this.pineconeService.queryDatabase(content);
       if (matches && matches.matches && matches.matches.length > 0) {
         contextString = matches.matches
-          .filter((m) => m?.score && m.score > 0.7)
-          .map((m) => JSON.stringify(m.metadata))
-          .join('\n\n');
+          .filter((m) => m?.score && m.score > 0.5)
+          .map((m) => m.metadata?.text || '')
+          .join(' ');
       }
     } catch (error) {
       console.error('Failed to retrieve context from Pinecone:', error);

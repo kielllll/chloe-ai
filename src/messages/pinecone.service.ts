@@ -1,51 +1,65 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pinecone } from '@pinecone-database/pinecone';
-import { GoogleGenAI } from '@google/genai';
+import { pipeline } from '@xenova/transformers';
 
 @Injectable()
-export class PineconeService {
+export class PineconeService implements OnModuleInit {
   private pineconeClient: Pinecone;
-  private genAI: GoogleGenAI;
+  private embedder: any;
   private pineconeIndex: string;
+  private isEmbedderReady = false;
 
   constructor(private configService: ConfigService) {
     const pineconeApiKey = this.configService.get<string>('PINECONE_API_KEY');
-    const googleGeminiApiKey = this.configService.get<string>('GEMINI_API_KEY');
     const pineconeIndex = this.configService.get<string>('PINECONE_INDEX');
 
     this.pineconeClient = new Pinecone({
       apiKey: pineconeApiKey || '',
     });
 
-    this.genAI = new GoogleGenAI({
-      apiKey: googleGeminiApiKey || '',
+    this.pineconeIndex = pineconeIndex || '';
+  }
+
+  async onModuleInit() {
+    try {
+      console.log('🤖 Loading embedding model (all-MiniLM-L6-v2)...');
+
+      // Load the same model as Python ingestion
+      this.embedder = await pipeline(
+        'feature-extraction',
+        'Xenova/all-MiniLM-L6-v2',
+      );
+
+      this.isEmbedderReady = true;
+      console.log('✅ Embedding model loaded and ready!');
+    } catch (error) {
+      console.error('❌ Failed to load embedding model:', error);
+      throw error;
+    }
+  }
+
+  private async generateEmbedding(text: string): Promise<number[]> {
+    if (!this.isEmbedderReady) {
+      throw new Error('Embedding model is not ready yet. Please wait...');
+    }
+
+    const output = await this.embedder(text, {
+      pooling: 'mean',
+      normalize: true,
     });
 
-    this.pineconeIndex = pineconeIndex || '';
+    return Array.from(output.data);
   }
 
   async queryDatabase(query: string) {
     const index = this.pineconeClient.index(this.pineconeIndex);
 
-    // Generate embedding for the query
-    const embeddingResult = await this.genAI.models.embedContent({
-      model: 'text-embedding-004',
-      contents: query,
-      config: {
-        outputDimensionality: 384,
-      },
-    });
+    // Generate embedding using local model (matches Python ingestion)
+    const vector = await this.generateEmbedding(query);
 
-    if (
-      !embeddingResult.embeddings ||
-      !embeddingResult.embeddings[0] ||
-      !embeddingResult.embeddings[0].values
-    ) {
-      throw new Error('Failed to generate embedding for query');
-    }
-
-    const vector = embeddingResult.embeddings[0].values;
+    console.log(`🔍 Query: "${query}"`);
+    console.log(`📊 Embedding dimension: ${vector.length}`);
 
     const queryResponse = await index.query({
       vector,
@@ -54,6 +68,23 @@ export class PineconeService {
       includeValues: true,
     });
 
+    // Log top score for debugging
+    if (queryResponse.matches && queryResponse.matches.length > 0) {
+      console.log(
+        `✓ Top score: ${queryResponse.matches[0].score?.toFixed(4)} (${(queryResponse.matches[0].score! * 100).toFixed(1)}%)`,
+      );
+    }
+
     return queryResponse;
+  }
+
+  // Helper method to get embedding dimension
+  getEmbeddingDimension(): number {
+    return 384; // all-MiniLM-L6-v2
+  }
+
+  // Helper method to check if embedder is ready
+  isReady(): boolean {
+    return this.isEmbedderReady;
   }
 }
