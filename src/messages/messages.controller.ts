@@ -15,7 +15,7 @@ export class MessagesController {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
 
-    const stream = await this.messagesService.generateStream(body.content);
+    const stream = await this.messagesService.create(body);
 
     stream.pipe(res);
 

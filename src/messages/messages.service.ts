@@ -18,7 +18,13 @@ export class MessagesService {
     });
   }
 
-  async generateStream(content: string): Promise<Readable> {
+  async create({
+    content,
+    conversationId,
+  }: {
+    content: string;
+    conversationId?: string;
+  }): Promise<Readable> {
     // 1. Query Pinecone for context
     let contextString = '';
     try {

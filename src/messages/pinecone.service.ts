@@ -23,8 +23,6 @@ export class PineconeService implements OnModuleInit {
 
   async onModuleInit() {
     try {
-      console.log('🤖 Loading embedding model (all-MiniLM-L6-v2)...');
-
       // Load the same model as Python ingestion
       this.embedder = await pipeline(
         'feature-extraction',
@@ -58,22 +56,12 @@ export class PineconeService implements OnModuleInit {
     // Generate embedding using local model (matches Python ingestion)
     const vector = await this.generateEmbedding(query);
 
-    console.log(`🔍 Query: "${query}"`);
-    console.log(`📊 Embedding dimension: ${vector.length}`);
-
     const queryResponse = await index.query({
       vector,
       topK: 5,
       includeMetadata: true,
       includeValues: true,
     });
-
-    // Log top score for debugging
-    if (queryResponse.matches && queryResponse.matches.length > 0) {
-      console.log(
-        `✓ Top score: ${queryResponse.matches[0].score?.toFixed(4)} (${(queryResponse.matches[0].score! * 100).toFixed(1)}%)`,
-      );
-    }
 
     return queryResponse;
   }
