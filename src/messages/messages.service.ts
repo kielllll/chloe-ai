@@ -3,6 +3,8 @@ import { Readable, PassThrough } from 'node:stream';
 import { GoogleGenAI } from '@google/genai';
 import { ConfigService } from '@nestjs/config';
 import { PineconeService } from './pinecone.service';
+import { DynamodbService } from 'src/dynamodb/dynamodb.service';
+import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class MessagesService {
@@ -11,6 +13,7 @@ export class MessagesService {
   constructor(
     private configService: ConfigService,
     private pineconeService: PineconeService,
+    private dynamodbService: DynamodbService,
   ) {
     const googleGeminiApiKey = this.configService.get<string>('GEMINI_API_KEY');
     this.genAI = new GoogleGenAI({
@@ -25,7 +28,17 @@ export class MessagesService {
     content: string;
     conversationId?: string;
   }): Promise<Readable> {
-    // 1. Query Pinecone for context
+    const dbconversationId = conversationId || randomUUID();
+    // 1. Save User Message
+    this.dynamodbService.put({
+      conversationId: dbconversationId,
+      timestamp: new Date().toISOString(),
+      messageId: randomUUID(),
+      type: 'user',
+      content,
+    });
+
+    // 2. Query Pinecone for context
     let contextString = '';
     try {
       const matches = await this.pineconeService.queryDatabase(content);
@@ -41,7 +54,7 @@ export class MessagesService {
       // For now, we proceed without context but we might want to inform the user.
     }
 
-    // 2. Construct Prompt
+    // 3. Construct Prompt
     const strictSystemPrompt = `
 You are a helpful assistant specialized in self-help books.
 
@@ -73,11 +86,21 @@ Provide a clear, helpful response.
 
     (async () => {
       try {
+        let response = '';
         for await (const chunk of result) {
           stream.write(chunk.text);
+          response += chunk.text;
         }
         console.log(`Stream complete.`);
         stream.end();
+
+        this.dynamodbService.put({
+          conversationId: dbconversationId,
+          timestamp: new Date().toISOString(),
+          messageId: randomUUID(),
+          type: 'agent',
+          content: response,
+        });
       } catch (error) {
         console.error('Stream error:', error);
         stream.destroy(error);

@@ -21,6 +21,8 @@
     "test:prompt": "sh test/sample-prompt.sh"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.954.0",
+    "@aws-sdk/lib-dynamodb": "^3.954.0",
     "@google/genai": "^1.32.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",

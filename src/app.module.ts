@@ -5,23 +5,28 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
 @Module({
-  imports: [ConfigModule.forRoot({
-    envFilePath: process.env.NODE_ENV === 'production' ? undefined : '.env.local',
-    isGlobal: true,
-    ignoreEnvFile: process.env.NODE_ENV === 'production'
-  }), ThrottlerModule.forRoot({
-    throttlers: [
-     {
-      limit: 10,
-      ttl: 60000
-     }
-    ]
-  }), MessagesModule],
+  imports: [
+    ConfigModule.forRoot({
+      envFilePath:
+        process.env.NODE_ENV === 'production' ? undefined : '.env.local',
+      isGlobal: true,
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
+    }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          limit: 10,
+          ttl: 60000,
+        },
+      ],
+    }),
+    MessagesModule,
+  ],
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard
-    }
-  ]
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
