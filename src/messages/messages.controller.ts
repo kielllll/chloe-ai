@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
 import { type Response } from 'express';
 import { CreateMessageDto } from './dto/create-message-dto';
 import { MessagesService } from './messages.service';
@@ -25,5 +25,12 @@ export class MessagesController {
         res.status(500).end();
       }
     });
+  }
+
+  @Get(':conversationId')
+  async getMessagesByConversationId(
+    @Param('conversationId') conversationId: string,
+  ) {
+    return await this.messagesService.get(conversationId);
   }
 }

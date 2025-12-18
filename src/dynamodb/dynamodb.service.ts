@@ -1,13 +1,11 @@
-import {
-  DynamoDBClient,
-  QueryCommand,
-  ScanCommand,
-} from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   DeleteCommand,
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
+  QueryCommand,
+  ScanCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { Injectable, OnModuleInit } from '@nestjs/common';

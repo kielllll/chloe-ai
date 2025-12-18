@@ -110,4 +110,13 @@ Provide a clear, helpful response.
     console.log('Returning stream...');
     return stream;
   }
+
+  async get(conversationId: string) {
+    return await this.dynamodbService.query(
+      'conversationId = :conversationId',
+      {
+        ':conversationId': conversationId,
+      },
+    );
+  }
 }
