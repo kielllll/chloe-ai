@@ -23,9 +23,11 @@ export class MessagesService {
 
   async create({
     content,
+    context: conversationContext,
     conversationId,
   }: {
     content: string;
+    context?: string[];
     conversationId?: string;
   }): Promise<Readable> {
     const dbconversationId = conversationId || randomUUID();
@@ -39,22 +41,32 @@ export class MessagesService {
     });
 
     // 2. Query Pinecone for context
-    let contextString = '';
+    let bookExcerptsString = '';
     try {
       const matches = await this.pineconeService.queryDatabase(content);
       if (matches && matches.matches && matches.matches.length > 0) {
-        contextString = matches.matches
+        bookExcerptsString = matches.matches
           .filter((m) => m?.score && m.score > 0.5)
           .map((m) => m.metadata?.text || '')
           .join(' ');
       }
     } catch (error) {
       console.error('Failed to retrieve context from Pinecone:', error);
-      // Fallback: Proceed without context or handle gracefully?
-      // For now, we proceed without context but we might want to inform the user.
     }
 
-    // 3. Construct Prompt
+    // 3. Process context if provided
+    let contextString = '';
+    if (conversationContext && conversationContext.length > 0) {
+      // Limit to last 5 messages
+      if (conversationContext.length > 5) {
+        conversationContext = conversationContext.slice(
+          conversationContext.length - 5,
+        );
+      }
+      contextString = conversationContext.join(' ');
+    }
+
+    // 3.5 Construct Prompt
     const strictSystemPrompt = `
 You are a helpful assistant specialized in self-help books.
 
@@ -66,11 +78,14 @@ Based on the book excerpts below, respond to the user's question appropriately:
 - Use ONLY the information provided in the excerpts
 
 Book Excerpts:
+${bookExcerptsString}
+
+Conversation Context (This will serve as your memory for this conversation):
 ${contextString}
 
 User Question: ${content}
 
-IMPORTANT: If the Book Excerpts section don't contain enough information to answer the question or basically empty, politely respond: "I don't have enough information about that in my current book collection. Could you ask about something else?"
+IMPORTANT: If the Book Excerpts section don't contain enough information to answer the question or if the user want to override the context, politely respond: "I don't have enough information about that in my current book collection. Could you ask about something else?"
 
 Provide a clear, helpful response.
 `;
