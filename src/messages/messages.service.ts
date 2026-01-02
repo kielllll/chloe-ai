@@ -25,22 +25,26 @@ export class MessagesService {
     content,
     context: conversationContext,
     conversationId,
+    saveConversation = false,
   }: {
     content: string;
     context?: string[];
     conversationId?: string;
+    saveConversation?: boolean;
   }): Promise<Readable> {
     const dbconversationId = conversationId || randomUUID();
-    // 1. Save User Message
-    this.dynamodbService.put({
-      conversationId: dbconversationId,
-      timestamp: new Date().toISOString(),
-      messageId: randomUUID(),
-      type: 'user',
-      content,
-    });
+    // Save User Message
+    if (saveConversation) {
+      this.dynamodbService.put({
+        conversationId: dbconversationId,
+        timestamp: new Date().toISOString(),
+        messageId: randomUUID(),
+        type: 'user',
+        content,
+      });
+    }
 
-    // 2. Query Pinecone for context
+    // Query Pinecone for context
     let bookExcerptsString = '';
     try {
       const matches = await this.pineconeService.queryDatabase(content);
@@ -54,7 +58,7 @@ export class MessagesService {
       console.error('Failed to retrieve context from Pinecone:', error);
     }
 
-    // 3. Process context if provided
+    // Process context if provided
     let contextString = '';
     if (conversationContext && conversationContext.length > 0) {
       // Limit to last 5 messages
@@ -66,7 +70,7 @@ export class MessagesService {
       contextString = conversationContext.join(' ');
     }
 
-    // 3.5 Construct Prompt
+    // Construct Prompt
     const strictSystemPrompt = `
 You are a helpful assistant specialized in self-help books.
 
@@ -90,6 +94,7 @@ IMPORTANT: If the Book Excerpts section don't contain enough information to answ
 Provide a clear, helpful response.
 `;
 
+    // Stream reponse
     const result = await this.genAI.models.generateContentStream({
       contents: strictSystemPrompt,
       model: 'gemini-2.5-flash-lite-preview-09-2025',
@@ -109,13 +114,15 @@ Provide a clear, helpful response.
         console.log(`Stream complete.`);
         stream.end();
 
-        this.dynamodbService.put({
-          conversationId: dbconversationId,
-          timestamp: new Date().toISOString(),
-          messageId: randomUUID(),
-          type: 'agent',
-          content: response,
-        });
+        if (saveConversation) {
+          this.dynamodbService.put({
+            conversationId: dbconversationId,
+            timestamp: new Date().toISOString(),
+            messageId: randomUUID(),
+            type: 'agent',
+            content: response,
+          });
+        }
       } catch (error) {
         console.error('Stream error:', error);
         stream.destroy(error);
