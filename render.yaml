@@ -25,14 +25,6 @@ services:
         - pnpm-lock.yaml
         - src/**
 
-  # Background worker for AI processing (optional)
-  - type: worker
-    name: chloe-ai-worker
-    env: node
-    plan: free
-    buildCommand: pnpm install --frozen-lockfile && pnpm run build
-    startCommand: node dist/worker # If you have worker logic
-
 # Add-ons for external services
 databases:
   # Render's PostgreSQL (free tier) - optional backup
