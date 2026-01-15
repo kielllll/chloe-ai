@@ -4,8 +4,8 @@ services:
     name: chloe-ai-api
     env: node
     plan: free
-    buildCommand: npm ci && npm run build
-    startCommand: npm run start:prod
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build
+    startCommand: pnpm run start:prod
 
     # Environment variables (to be configured in Render dashboard)
     envVars:
@@ -22,7 +22,7 @@ services:
     buildFilter:
       paths:
         - package.json
-        - package-lock.json
+        - pnpm-lock.yaml
         - src/**
 
   # Background worker for AI processing (optional)
@@ -30,7 +30,7 @@ services:
     name: chloe-ai-worker
     env: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build
     startCommand: node dist/worker # If you have worker logic
 
 # Add-ons for external services
