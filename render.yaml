@@ -6,7 +6,6 @@ services:
     plan: free
     buildCommand: npm ci && npm run build
     startCommand: npm run start:prod
-    nodeVersion: 20
 
     # Environment variables (to be configured in Render dashboard)
     envVars:
@@ -33,7 +32,6 @@ services:
     plan: free
     buildCommand: npm ci && npm run build
     startCommand: node dist/worker # If you have worker logic
-    nodeVersion: 20
 
 # Add-ons for external services
 databases:
