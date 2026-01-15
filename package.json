@@ -79,9 +79,6 @@
   },
   "pnpm": {
     "shamefullyHoist": true,
-    "ignoredBuiltDependencies": [
-      "sharp"
-    ],
     "supportedArchitectures": {
       "os": [
         "current",
