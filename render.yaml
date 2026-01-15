@@ -1,0 +1,43 @@
+services:
+  # Main NestJS API Service
+  - type: web
+    name: chloe-ai-api
+    env: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:prod
+    nodeVersion: 20
+
+    # Environment variables (to be configured in Render dashboard)
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000 # Render's free tier port
+
+    # Free tier constraints
+    healthCheckPath: /health
+    autoDeploy: yes
+
+    # Build cache optimization
+    buildFilter:
+      paths:
+        - package.json
+        - package-lock.json
+        - src/**
+
+  # Background worker for AI processing (optional)
+  - type: worker
+    name: chloe-ai-worker
+    env: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/worker # If you have worker logic
+    nodeVersion: 20
+
+# Add-ons for external services
+databases:
+  # Render's PostgreSQL (free tier) - optional backup
+  - name: chloe-ai-db
+    databaseName: chloe_ai
+    plan: free
