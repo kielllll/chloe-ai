@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "prebuild": "rm -rf dist",
+    "prebuild": "npm install --platform=linux --arch=x64 sharp",
     "build": "nest build",
     "postinstall": "pnpm rebuild sharp || true",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
