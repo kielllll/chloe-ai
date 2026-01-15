@@ -4,7 +4,7 @@ services:
     name: chloe-ai-api
     env: node
     plan: free
-    buildCommand: pnpm install --no-frozen-lockfile && pnpm run build
+    buildCommand: pnpm install && pnpm run build
     startCommand: pnpm run start:prod
 
     # Environment variables (to be configured in Render dashboard)
