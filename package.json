@@ -80,6 +80,9 @@
     "testEnvironment": "node"
   },
   "pnpm": {
-    "shamefullyHoist": true
+    "shamefullyHoist": true,
+    "ignoredBuiltDependencies": [
+      "sharp"
+    ]
   }
 }
