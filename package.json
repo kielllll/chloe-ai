@@ -8,7 +8,7 @@
   "scripts": {
     "prebuild": "rm -rf dist",
     "build": "nest build",
-    "postinstall": "pnpm rebuild sharp || true",
+    "postinstall": "pnpm rebuild sharp --platform=linux --arch=x64 || echo 'Sharp rebuild skipped'",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
