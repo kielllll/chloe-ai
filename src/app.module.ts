@@ -14,14 +14,14 @@ import { AppService } from './app.service';
       isGlobal: true,
       ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          limit: 5,
-          ttl: 60000,
-        },
-      ],
-    }),
+    // ThrottlerModule.forRoot({
+    //  throttlers: [
+    //    {
+    //     limit: 5,
+    //      ttl: 60000,
+    //    },
+    //  ],
+    //}),
     MessagesModule,
   ],
   controllers: [AppController],
