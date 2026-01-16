@@ -4,7 +4,7 @@ services:
     name: chloe-ai-api
     env: node
     plan: free
-    buildCommand: pnpm store prune && pnpm install --no-frozen-lockfile && pnpm rebuild sharp && pnpm run build
+    buildCommand: pnpm install --no-frozen-lockfile && cd node_modules/.pnpm/node_modules/sharp 2>/dev/null || cd node_modules/.pnpm/sharp@*/node_modules/sharp && npm install --verbose && cd /opt/render/project/src && pnpm run build
     startCommand: pnpm run start:prod
 
     # Environment variables (to be configured in Render dashboard)
